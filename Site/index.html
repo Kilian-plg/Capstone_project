@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Connexion</title>
+    <script src="https://unpkg.com/pocketbase/dist/pocketbase.umd.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Connexion / Inscription</h2>
+
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Mot de passe" />
+
+    <button onclick="login()">Se connecter</button>
+    <button onclick="signup()">Créer un compte</button>
+
+    <div id="error" class="error"></div>
+</div>
+
+<script>
+    const pb = new PocketBase("http://127.0.0.1:8090");
+    const collection = "users";
+
+    if (pb.authStore.isValid) {
+        window.location.href = "app.html";
+    }
+
+    function getEmail() {
+        return document.getElementById("email").value.trim();
+    }
+
+    function getPassword() {
+        return document.getElementById("password").value.trim();
+    }
+
+    function showError(message) {
+        document.getElementById("error").innerText = message;
+    }
+
+    function clearError() {
+        document.getElementById("error").innerText = "";
+    }
+
+    async function login() {
+        clearError();
+        pb.authStore.clear(); // 🔴 IMPORTANT
+
+        try {
+            await pb.collection(collection).authWithPassword(
+                getEmail(),
+                getPassword()
+            );
+
+            window.location.href = "app.html";
+        } catch (e) {
+            showError("Connexion impossible. Vérifiez vos informations.");
+        }
+    }
+async function signup() {
+    clearError();
+    pb.authStore.clear();
+
+    try {
+        await pb.collection(collection).create({
+            email: getEmail(),
+            password: getPassword(),
+            passwordConfirm: getPassword(),
+        });
+
+        await pb.collection(collection).authWithPassword(
+            getEmail(),
+            getPassword()
+        );
+
+        window.location.href = "app.html";
+
+    } catch (e) {
+        console.log("ERREUR COMPLETE :", e);
+        console.log("DATA :", e.data);
+        showError("Erreur: " + JSON.stringify(e.data));
+    }
+}
+
+</script>
+
+</body>
+</html>

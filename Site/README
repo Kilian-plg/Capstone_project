@@ -1,0 +1,23 @@
+How to use the website ?
+1. START THE DATABASE (Terminal 1)
+Open a terminal.
+
+Type: cd "pocketbase_0.36.2_windows_amd64"
+
+Type: ./pocketbase.exe serve
+
+Leave this window open.
+
+2. START THE WEBSITE (Terminal 2)
+Open a second terminal.
+
+Type: cd mon-reseau-social
+
+Type: npm run dev
+
+Leave this window open too.
+
+3. OPEN YOUR BROWSER
+Go to: http://localhost:5173 (To see your site).
+
+Go to: http://127.0.0.1:8090/_/ (To manage users/database).

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>App</title>
+    <script src="https://unpkg.com/pocketbase/dist/pocketbase.umd.js"></script>
+</head>
+<body>
+
+<h1>Bienvenue ! Vous êtes connecté 🎉</h1>
+<button onclick="logout()">Se déconnecter</button>
+
+<script>
+    const pb = new PocketBase("http://127.0.0.1:8090");
+
+    // Si pas connecté → retour login
+    if (!pb.authStore.isValid) {
+        window.location.href = "index.html";
+    }
+
+    function logout() {
+        pb.authStore.clear();
+        window.location.href = "index.html";
+    }
+</script>
+
+</body>
+</html>

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import PocketBase from 'pocketbase';
 
 const pb = new PocketBase("http://127.0.0.1:8090");
+// On désactive l'auto-annulation pour éviter les erreurs ClientResponse 0 en mode dev
+pb.autoCancellation(false);
 
 function App() {
   const [email, setEmail] = useState("");
@@ -119,6 +121,7 @@ function App() {
     } catch (err) { console.error(err); }
   };
 
+  // FIX : SUPPRESSION DE POST
   const handleDeletePost = async (postId) => {
     if (deleteConfirmId === postId) {
       try {
@@ -128,8 +131,25 @@ function App() {
       } catch (err) { console.error(err); }
     } else {
       setDeleteConfirmId(postId);
+      // Annule la confirmation si on ne clique pas dans les 3 secondes
       setTimeout(() => setDeleteConfirmId(null), 3000);
     }
+  };
+
+  // FIX : CHANGEMENT DE PHOTO DE PROFIL
+  const handleUpdateAvatar = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('avatar', file);
+    try {
+      const updated = await pb.collection('users').update(user.id, formData);
+      // CRUCIAL : Mettre à jour le store pour que l'image s'affiche partout
+      pb.authStore.save(pb.authStore.token, updated);
+      setUser(updated);
+      loadAllUsers();
+      loadPosts();
+    } catch (err) { alert("Avatar upload failed."); }
   };
 
   const handleLike = async (post) => {
@@ -220,17 +240,10 @@ function App() {
                   <img src={pb.files.getURL(viewingUser || user, (viewingUser || user).avatar)} style={styles.bigAvatar} />
                 ) : <div style={styles.bigAvatarPlaceholder}>👤</div>}
                 
-                {/* RESTAURATION CHANGEMENT PHOTO PROFIL */}
+                {/* FIX : CHANGEMENT PHOTO PROFIL AVEC INPUT CACHÉ */}
                 {!viewingUser && (
                   <>
-                    <input type="file" onChange={(e) => {
-                      const file = e.target.files[0];
-                      if(file) {
-                        const formData = new FormData();
-                        formData.append('avatar', file);
-                        pb.collection('users').update(user.id, formData).then(u => {setUser(u); loadAllUsers();});
-                      }
-                    }} style={styles.fileInputHidden} id="avatarInput" />
+                    <input type="file" onChange={handleUpdateAvatar} style={styles.fileInputHidden} id="avatarInput" />
                     <label htmlFor="avatarInput" style={styles.avatarEditBadge}>✎</label>
                   </>
                 )}
@@ -272,6 +285,7 @@ function App() {
                 ) : <div style={styles.miniAvatarPlaceholder}>👤</div>}
                 <span style={styles.authorName}>{post.expand?.user?.username}</span>
               </div>
+              {/* FIX : SUPPRESSION DE POST */}
               {post.user === user.id && (
                 <button onClick={() => handleDeletePost(post.id)} style={{...styles.deleteBtn, color: deleteConfirmId === post.id ? '#ff9800' : '#ef4444'}}>
                   {deleteConfirmId === post.id ? "confirm?" : "delete"}
@@ -342,7 +356,8 @@ const styles = {
   logo: { color: '#8b5cf6', marginBottom: '20px' },
   input: { width: '100%', padding: '12px', margin: '10px 0', background: '#0a0a0c', border: '1px solid #333', color: '#fff', borderRadius: '10px' },
   mainButton: { width: '100%', padding: '12px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-  toggleLink: { fontSize: '12px', color: '#9ca3af', cursor: 'pointer', marginTop: '15px' }
+  toggleLink: { fontSize: '12px', color: '#9ca3af', cursor: 'pointer', marginTop: '15px' },
+  hideMobile: { '@media (maxWidth: 600px)': { display: 'none' } }
 };
 
 export default App;
